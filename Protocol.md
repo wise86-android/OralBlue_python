@@ -76,10 +76,26 @@ byte 15 (first 3 byte: mask 0x07)
 
 ## Charateristics
 
+### Status
+UUID: A0F0FF04-5047-4D53-8208-4F72616C2D42
+
+data: 2 bytes [state, unknown]
+
 ### Battery level:
 uuid: A0F0FF05-5047-4D53-8208-4F72616C2D42
+data: only the first byte it is used -> 0..100 ?
 
-data: 1 byte -> 0..100 ?
+### Brusing mode
+UUID: A0F0FF07-5047-4D53-8208-4F72616C2D42
+
+data: 1 byte -> 0..6
+
+
+### Brusing time:
+UUID: A0F0FF08-5047-4D53-8208-4F72616C2D42
+
+data: 2 bytes [min, sec]
+
 
 ###Sector
 UUID: a0f0ff09-5047-4d53-8208-4f72616c2d42
@@ -96,27 +112,17 @@ when 2 minutes ends
 
 data: 1 byte 0/1 
 
-### Brusing mode
-UUID: A0F0FF07-5047-4D53-8208-4F72616C2D42
-
-data: 1 byte -> 0..6
-
-### Brusing time:
-UUID: A0F0FF08-5047-4D53-8208-4F72616C2D42
-
-data 2 bytes min, sec
 
 
 Used Bluetooth LE Scanner app
+
+
  A0F0FF04-5047-4D53-8208-4F72616C2D42: Device State
  States over time
  on: 0x200
  starting to brush: 0x800
  brushing: 0x300
  on: 0x200
- 
- A0F0FF05-5047-4D53-8208-4F72616C2D42: Battery Level
- relatively fully charged: 0x63361300 ex, c6 string
  
  
  A0F0FF0B-5047-4D53-8208-4F72616C2D42: Pressure Sensor
