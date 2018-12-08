@@ -1,8 +1,21 @@
+from typing import Optional
+
+from bluepy.btle import ScanEntry
+
 from OralBlue.BrushMode import BrushMode
 from OralBlue.BrushState import BrushState
 
 
-class AdvertiseParser(object):
+class OralBAdvertise(object):
+
+    @staticmethod
+    def buildFromScanEntry(scanEntry: ScanEntry) -> Optional["OralBAdvertise"]:
+        vendorSpecificData = scanEntry.getValueText(ScanEntry.MANUFACTURER)
+        parser = OralBAdvertise(vendorSpecificData)
+        if parser.isValid:
+            return parser
+        else:
+            return None
 
     def _extractByte(self, data: str, offset: int) -> int:
         return int(data[2 * offset: 2 * offset + 2], 16)
