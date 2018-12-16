@@ -106,6 +106,27 @@ UUID: a0f0ff09-5047-4d53-8208-4f72616c2d42
 
 data 1 byte -> 0..8
 
+
+###Current time
+UUID: a0f0ff22-5047-4d53-8208-4f72616c2d42
+
+data: 4 bytes little endian seconds after 1/1/2000
+
+Access: R/W
+
+Note: To change it you have to write [0x37,0x26] into the control characteristics before write the new value
+
+
+#Available modes
+UUID: a0f0ff25-5047-4d53-8208-4f72616c2d42
+
+Data: 8 byte, each byte is a possible motor mode
+Access: R/W
+
+it can be used to reordered the available modes
+
+Note: To change it you have to write [0x37,0x29] into the control characteristics before write the new value
+
 ### button state ?
 UUID A0F0FF06-5047-4D53-8208-4F72616C2D42
 

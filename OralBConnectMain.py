@@ -1,6 +1,9 @@
 # import the necessary parts of the bluepy library
+from datetime import datetime
+
 from bluepy.btle import BTLEException
 
+from OralBlue.BrushMode import BrushMode
 from OralBlue.OralBToothbrush import OralBToothbrush
 
 if __name__ == '__main__':
@@ -11,10 +14,10 @@ if __name__ == '__main__':
     # device.setBrushingTimeUpdateCallback(lambda x: print("Time: {}s".format(x)))
     # device.setBrushStateUpdateCallback(lambda x: print("State: {}".format(str(x))))
     # device.setBrushModeUpdateCallback(lambda x: print("Mode: {}".format(str(x))))
-    print(device.readCurrentTime())
-    device.setCurrentTime()
-    print(device.readCurrentTime())
-
+    #device.writeAvailableModes([BrushMode.DAILY_CLEAN,BrushMode.WHITENING,BrushMode.SENSITIVE])
+    #print(device.readAvailableModes())
+    device.writeAvailableModes([BrushMode.DAILY_CLEAN, BrushMode.SENSITIVE, BrushMode.WHITENING])
+    print(device.readAvailableModes())
     while True:
         try:
             device.waitForNotifications(0.5)

@@ -16,6 +16,8 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
     _BRUSING_TIME_CHAR = UUID("a0f0ff08-5047-4d53-8208-4f72616c2d42")
     _CONTROL_CHAR = UUID("a0f0ff21-5047-4d53-8208-4f72616c2d42")
     _CURRENT_DATE_CHAR = UUID("a0f0ff22-5047-4d53-8208-4f72616c2d42")
+    _AVAILABLE_MODES_CHAR = UUID("a0f0ff25-5047-4d53-8208-4f72616c2d42")
+
 
     BatteryStatusCallback = Callable[[int], None]
     BrushingTimeCallback = Callable[[int], None]
@@ -46,6 +48,7 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
         self._modelIdChar = OralBToothbrush._findChar(OralBToothbrush._MODEL_ID_CHAR, allChars)
         self._controlChar = OralBToothbrush._findChar(OralBToothbrush._CONTROL_CHAR,allChars)
         self._currentDateChar = OralBToothbrush._findChar(OralBToothbrush._CURRENT_DATE_CHAR, allChars)
+        self._availableModes = OralBToothbrush._findChar(OralBToothbrush._AVAILABLE_MODES_CHAR, allChars)
         self._callbackMap = {}
 
     def _writeCharDescriptor(self, characteristic: Characteristic, data):
@@ -152,7 +155,7 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
         self._controlChar.write(data)
 
     def readCurrentTime(self) ->datetime:
-        self._writeControl(0x01,0x00)
+        #self._writeControl(0x01,0x00) #seemsnot needed...
         rawSecAfter2000 = self._currentDateChar.read()
         print(rawSecAfter2000)
         secAfter2000 = struct.unpack("<I", rawSecAfter2000)[0]
@@ -161,10 +164,22 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
         return datetime(year=2000,month=1,day=1) + delta
 
     def setCurrentTime(self,now = datetime.now()):
-        self._writeControl(55,38)
+        self._writeControl(0x37,38)
         base = datetime(year=2000,month=1,day=1)
         secAfter2000 = (now - base).total_seconds()
         print(secAfter2000)
         rawSecAfter2000 = struct.pack("<I",int(secAfter2000))
         print(rawSecAfter2000)
         self._currentDateChar.write(rawSecAfter2000)
+
+    def readAvailableModes(self)->[BrushMode]:
+        rawModes = self._availableModes.read()
+        return [BrushMode(mode) for mode in rawModes]
+
+    def writeAvailableModes(self,newOrder:[BrushMode]):
+        self._writeControl(0x37,0x29)
+        rawData = bytearray(8)
+        nMode = len(newOrder)
+        rawData[0:nMode] = [mode.value for mode in newOrder]
+        print(rawData)
+        self._availableModes.write(rawData)
