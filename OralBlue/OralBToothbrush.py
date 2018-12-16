@@ -1,3 +1,5 @@
+import struct
+from datetime import timedelta, datetime
 from typing import Callable, Iterable, Optional
 
 from bluepy.btle import Peripheral, UUID, Characteristic, DefaultDelegate
@@ -12,6 +14,8 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
     _BATTERY_CHAR = UUID("a0f0ff05-5047-4d53-8208-4f72616c2d42")
     _MODE_CHAR = UUID("a0f0ff07-5047-4d53-8208-4f72616c2d42")
     _BRUSING_TIME_CHAR = UUID("a0f0ff08-5047-4d53-8208-4f72616c2d42")
+    _CONTROL_CHAR = UUID("a0f0ff21-5047-4d53-8208-4f72616c2d42")
+    _CURRENT_DATE_CHAR = UUID("a0f0ff22-5047-4d53-8208-4f72616c2d42")
 
     BatteryStatusCallback = Callable[[int], None]
     BrushingTimeCallback = Callable[[int], None]
@@ -40,6 +44,8 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
         self._statusChar = OralBToothbrush._findChar(OralBToothbrush._STATUS_CHAR, allChars)
         self._modeChar = OralBToothbrush._findChar(OralBToothbrush._MODE_CHAR, allChars)
         self._modelIdChar = OralBToothbrush._findChar(OralBToothbrush._MODEL_ID_CHAR, allChars)
+        self._controlChar = OralBToothbrush._findChar(OralBToothbrush._CONTROL_CHAR,allChars)
+        self._currentDateChar = OralBToothbrush._findChar(OralBToothbrush._CURRENT_DATE_CHAR, allChars)
         self._callbackMap = {}
 
     def _writeCharDescriptor(self, characteristic: Characteristic, data):
@@ -138,3 +144,27 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
             self._registerCallback(self._modeChar,
                                    lambda data: callback(
                                        OralBToothbrush._parseBrushModeResponse(data)))
+
+    def _writeControl(self,commandId:int,param:int):
+        data = bytearray(2)
+        data[0] = commandId
+        data[1] = param
+        self._controlChar.write(data)
+
+    def readCurrentTime(self) ->datetime:
+        self._writeControl(0x01,0x00)
+        rawSecAfter2000 = self._currentDateChar.read()
+        print(rawSecAfter2000)
+        secAfter2000 = struct.unpack("<I", rawSecAfter2000)[0]
+        print(secAfter2000)
+        delta = timedelta(seconds = secAfter2000)
+        return datetime(year=2000,month=1,day=1) + delta
+
+    def setCurrentTime(self,now = datetime.now()):
+        self._writeControl(55,38)
+        base = datetime(year=2000,month=1,day=1)
+        secAfter2000 = (now - base).total_seconds()
+        print(secAfter2000)
+        rawSecAfter2000 = struct.pack("<I",int(secAfter2000))
+        print(rawSecAfter2000)
+        self._currentDateChar.write(rawSecAfter2000)
