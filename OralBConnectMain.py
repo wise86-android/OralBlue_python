@@ -16,8 +16,8 @@ if __name__ == '__main__':
     # device.setBrushModeUpdateCallback(lambda x: print("Mode: {}".format(str(x))))
     #device.writeAvailableModes([BrushMode.DAILY_CLEAN,BrushMode.WHITENING,BrushMode.SENSITIVE])
     #print(device.readAvailableModes())
-    device.writeAvailableModes([BrushMode.DAILY_CLEAN, BrushMode.SENSITIVE, BrushMode.WHITENING])
-    print(device.readAvailableModes())
+    session = device.readSession()
+    [print(s) for s in session]
     while True:
         try:
             device.waitForNotifications(0.5)

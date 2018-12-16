@@ -5,7 +5,9 @@ from typing import Callable, Iterable, Optional
 from bluepy.btle import Peripheral, UUID, Characteristic, DefaultDelegate
 
 from OralBlue.BrushMode import BrushMode
+from OralBlue.BrushSession import BrushSession
 from OralBlue.BrushState import BrushState
+from OralBlue.OralBDate import OralBDate
 
 
 class OralBToothbrush(Peripheral, DefaultDelegate):
@@ -17,6 +19,7 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
     _CONTROL_CHAR = UUID("a0f0ff21-5047-4d53-8208-4f72616c2d42")
     _CURRENT_DATE_CHAR = UUID("a0f0ff22-5047-4d53-8208-4f72616c2d42")
     _AVAILABLE_MODES_CHAR = UUID("a0f0ff25-5047-4d53-8208-4f72616c2d42")
+    _SESSION_INFO_CHAR = UUID("a0f0ff29-5047-4d53-8208-4f72616c2d42")
 
 
     BatteryStatusCallback = Callable[[int], None]
@@ -48,7 +51,8 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
         self._modelIdChar = OralBToothbrush._findChar(OralBToothbrush._MODEL_ID_CHAR, allChars)
         self._controlChar = OralBToothbrush._findChar(OralBToothbrush._CONTROL_CHAR,allChars)
         self._currentDateChar = OralBToothbrush._findChar(OralBToothbrush._CURRENT_DATE_CHAR, allChars)
-        self._availableModes = OralBToothbrush._findChar(OralBToothbrush._AVAILABLE_MODES_CHAR, allChars)
+        self._availableModesChar = OralBToothbrush._findChar(OralBToothbrush._AVAILABLE_MODES_CHAR, allChars)
+        self._sessionInfoChar = OralBToothbrush._findChar(OralBToothbrush._SESSION_INFO_CHAR, allChars)
         self._callbackMap = {}
 
     def _writeCharDescriptor(self, characteristic: Characteristic, data):
@@ -157,19 +161,15 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
     def readCurrentTime(self) ->datetime:
         #self._writeControl(0x01,0x00) #seemsnot needed...
         rawSecAfter2000 = self._currentDateChar.read()
-        secAfter2000 = struct.unpack("<I", rawSecAfter2000)[0]
-        delta = timedelta(seconds = secAfter2000)
-        return datetime(year=2000,month=1,day=1) + delta
+        return OralBDate(rawSecAfter2000).datetime
 
     def setCurrentTime(self,now = datetime.now()):
         self._writeControl(0x37,0x26)
-        base = datetime(year=2000,month=1,day=1)
-        secAfter2000 = (now - base).total_seconds()
-        rawSecAfter2000 = struct.pack("<I",int(secAfter2000))
-        self._currentDateChar.write(rawSecAfter2000)
+        date = OralBDate.fromDatetime(now)
+        self._currentDateChar.write(date.toBytes())
 
     def readAvailableModes(self)->[BrushMode]:
-        rawModes = self._availableModes.read()
+        rawModes = self._availableModesChar.read()
         return [BrushMode(mode) for mode in rawModes]
 
     def writeAvailableModes(self,newOrder:[BrushMode]):
@@ -177,4 +177,12 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
         rawData = bytearray(8)
         nMode = len(newOrder)
         rawData[0:nMode] = [mode.value for mode in newOrder]
-        self._availableModes.write(rawData)
+        self._availableModesChar.write(rawData)
+
+    def readSession(self)->[BrushSession]:
+        session=[]
+        for i in range(0,10):
+            self._writeControl(2,i)
+            data = self._sessionInfoChar.read()
+            session.append(BrushSession(data))
+        return session
