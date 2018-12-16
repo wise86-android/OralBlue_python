@@ -157,19 +157,15 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
     def readCurrentTime(self) ->datetime:
         #self._writeControl(0x01,0x00) #seemsnot needed...
         rawSecAfter2000 = self._currentDateChar.read()
-        print(rawSecAfter2000)
         secAfter2000 = struct.unpack("<I", rawSecAfter2000)[0]
-        print(secAfter2000)
         delta = timedelta(seconds = secAfter2000)
         return datetime(year=2000,month=1,day=1) + delta
 
     def setCurrentTime(self,now = datetime.now()):
-        self._writeControl(0x37,38)
+        self._writeControl(0x37,0x26)
         base = datetime(year=2000,month=1,day=1)
         secAfter2000 = (now - base).total_seconds()
-        print(secAfter2000)
         rawSecAfter2000 = struct.pack("<I",int(secAfter2000))
-        print(rawSecAfter2000)
         self._currentDateChar.write(rawSecAfter2000)
 
     def readAvailableModes(self)->[BrushMode]:
@@ -181,5 +177,4 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
         rawData = bytearray(8)
         nMode = len(newOrder)
         rawData[0:nMode] = [mode.value for mode in newOrder]
-        print(rawData)
         self._availableModes.write(rawData)
