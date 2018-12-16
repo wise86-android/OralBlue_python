@@ -76,6 +76,11 @@ byte 15 (first 3 byte: mask 0x07)
 
 ## Charateristics
 
+### ModelId
+UUID: a0f0ff02-5047-4d53-8208-4f72616c2d42
+
+data: 1 byte model id ad in advertise
+
 ### Status
 UUID: A0F0FF04-5047-4D53-8208-4F72616C2D42
 
@@ -89,7 +94,6 @@ data: only the first byte it is used -> 0..100 ?
 UUID: A0F0FF07-5047-4D53-8208-4F72616C2D42
 
 data: 1 byte -> 0..6
-
 
 ### Brusing time:
 UUID: A0F0FF08-5047-4D53-8208-4F72616C2D42

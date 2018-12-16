@@ -7,6 +7,7 @@ from OralBlue.BrushState import BrushState
 
 
 class OralBToothbrush(Peripheral, DefaultDelegate):
+    _MODEL_ID_CHAR = UUID("a0f0ff02-5047-4d53-8208-4f72616c2d42")
     _STATUS_CHAR = UUID("a0f0ff04-5047-4d53-8208-4f72616c2d42")
     _BATTERY_CHAR = UUID("a0f0ff05-5047-4d53-8208-4f72616c2d42")
     _MODE_CHAR = UUID("a0f0ff07-5047-4d53-8208-4f72616c2d42")
@@ -16,6 +17,7 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
     BrushingTimeCallback = Callable[[int], None]
     BrushStateCallback = Callable[[BrushState], None]
     BrushModeCallback = Callable[[BrushMode], None]
+
 
     def handleNotification(self, cHandle, data):
         print("notify {} -> {}", cHandle, data)
@@ -37,6 +39,7 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
         self._brushingTimeChar = OralBToothbrush._findChar(OralBToothbrush._BRUSING_TIME_CHAR, allChars)
         self._statusChar = OralBToothbrush._findChar(OralBToothbrush._STATUS_CHAR, allChars)
         self._modeChar = OralBToothbrush._findChar(OralBToothbrush._MODE_CHAR, allChars)
+        self._modelIdChar = OralBToothbrush._findChar(OralBToothbrush._MODEL_ID_CHAR, allChars)
         self._callbackMap = {}
 
     def _writeCharDescriptor(self, characteristic: Characteristic, data):
@@ -76,6 +79,10 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
     @staticmethod
     def _parseBrushModeResponse(data) -> BrushMode:
         return BrushMode(data[0])
+
+    def readModelId(self):
+        data = self._modelIdChar.read()
+        return data[0]
 
     def readBatteryStatus(self, onRead: BatteryStatusCallback):
         if self._batteryChar is None:
