@@ -9,33 +9,42 @@ byte 5 and 6 must be 0xDC00
 
 byte 7 is the protocol version (1,2,3)
 
-byte 8 is the type( ?) and can be:
+byte 8 is device type and can be:
 
-- 1 ->  ORAL-B SmartSeries (6 Modes) (1, 5, 2, 4, 3, 6)
-
-- 2 -> ORAL-B SmartSeries (5 Modes) (1, 5, 2, 4, 3)
-
-- 65 (0x41) -> ORAL-B SmartSeries (4 Modes) (1, 2, 4, 3)
-
-- 66 (0x42) -> ORAL-B SmartSeries (3 Modes) (1, 2, 3)
-
-- 67 (0x43) -> ORAL-B SmartSeries (2 Modes) (1, 2)
-
-- 68 (0x44) -> ORAL-B SmartSeries (2 Modes) (1, 3)
-
-- 69 (0x45) -> ORAL-B SmartSeries (3 Modes) (1, 2, 4)
-
-- 70 (0x46) -> ORAL-B SmartSeries (1 Mode) (1)
-
-- 33  -> ??
-
-- 34  -> ??
+- 0 -> D36 (X Mode)
+- 1 -> D36 (6 Mode)
+- 2  -> D36 (5 Mode)
+- 32  -> D701 (X Mode)
+- 33  -> D701 (6 Mode)
+- 34  -> D701 (5 Mode)
+- 39  -> D700 (5 Mode)
+- 40 -> D700 (4 Mode)
+- 41  -> D700 (6 Mode)
+- 63  -> D36 (Experimental)
+- 64  -> D21 (X Mode)
+- 65  -> D21 (4 Mode)
+- 66  -> D21 (3a Mode)
+- 67  -> D21 (2a Mode)
+- 68  -> D21 (2b Mode)
+- 69  -> D21 (3b Mode)
+- 70 -> D21 (1 Mode)
+- 80 -> D601 (X Mode)
+- 81 -> D601 (5 Mode)
+- 82 -> D601 (4 Mode)
+- 83 -> D601 (3A Mode)
+- 84 -> D601 (2A Mode)
+- 85 -> D601 (2B Mode)
+- 86 -> D601 (3B Mode)
+- 87 -> D601 (1 Mode)
 
 byte 9 is the fwVersion
 
 byte 10 brush state (see #State)
 
-byte 11 high pressure flag 8bit is high pressure, 7bit unknown
+byte 11
+bit 8: high pressure 0 = normal 1 = high
+bit 7: motor speed, 0 = normal 1 = reduced
+bit 1: timer mode, 0 = profesional (each 30s) 1= only end
 
 byte 12 brusing time min 
 
@@ -43,7 +52,9 @@ byte 13 brusing time sec
 
 byte 14 brush mode (see #Mode)
 
-byte 15 (first 3 byte: mask 0x07) 
+byte 15:
+bit 0,1,2: quadrant
+bit 3,4,5: smiley 
 
 # Mode
 |Id |Mode|

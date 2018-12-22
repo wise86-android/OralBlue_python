@@ -61,6 +61,26 @@ class AdvertiseParserTestCase(unittest.TestCase):
         validParser = OralBAdvertise.OralBAdvertise("dc00000000007F000000000000")
         self.assertFalse(validParser.hightPressureDetected)
 
+    def test_the6thByteHasMotorSpeedBit(self):
+        validParser = OralBAdvertise.OralBAdvertise("dc000000000040000000000000")
+        self.assertTrue(validParser.hasReducedMotorSpeed)
+        validParser = OralBAdvertise.OralBAdvertise("dc0000000000FF000000000000")
+        self.assertTrue(validParser.hasReducedMotorSpeed)
+        validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000000000")
+        self.assertFalse(validParser.hasReducedMotorSpeed)
+        validParser = OralBAdvertise.OralBAdvertise("dc0000000000BF000000000000")
+        self.assertFalse(validParser.hasReducedMotorSpeed)
+
+    def test_the1stBitIsTheTimerMode(self):
+        validParser = OralBAdvertise.OralBAdvertise("dc000000000001000000000000")
+        self.assertTrue(validParser.hasProfesionalTimer)
+        validParser = OralBAdvertise.OralBAdvertise("dc0000000000FF000000000000")
+        self.assertTrue(validParser.hasProfesionalTimer)
+        validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000000000")
+        self.assertFalse(validParser.hasProfesionalTimer)
+        validParser = OralBAdvertise.OralBAdvertise("dc0000000000FE000000000000")
+        self.assertFalse(validParser.hasProfesionalTimer)
+
     def test_the8thByteIsBrushingTime(self):
         validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000000000")
         self.assertEqual(validParser.brushingTimeS, 0)
@@ -83,7 +103,7 @@ class AdvertiseParserTestCase(unittest.TestCase):
         validParser = OralBAdvertise.OralBAdvertise("dc0000000000000000FF000000")
         self.assertEqual(validParser.brushingMode, BrushMode.UNKNOWN)
 
-    def test_theLast3bitsOf11thByteIsCurentSector(self):
+    def test_theLast3bitsOf11thByteIsCurrentSector(self):
         validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000000000")
         self.assertEqual(validParser.sector, 0x00)
         validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000010000")
@@ -93,6 +113,15 @@ class AdvertiseParserTestCase(unittest.TestCase):
         validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000FF0000")
         self.assertEqual(validParser.sector, 0x07)
 
+    def test_thecentral3bitsOf11thByteIsCurrentSmily(self):
+        validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000000000")
+        self.assertEqual(validParser.smiley, 0x00)
+        validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000080000")
+        self.assertEqual(validParser.smiley, 0x01)
+        validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000100000")
+        self.assertEqual(validParser.smiley, 0x02)
+        validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000FF0000")
+        self.assertEqual(validParser.smiley, 0x07)
 
 if __name__ == '__main__':
     unittest.main()
