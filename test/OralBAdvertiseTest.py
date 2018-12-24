@@ -1,6 +1,7 @@
 import unittest
 from OralBlue import OralBAdvertise
 from OralBlue.BrushMode import BrushMode
+from OralBlue.BrushSector import BrushSector
 from OralBlue.BrushState import BrushState
 
 
@@ -105,13 +106,13 @@ class AdvertiseParserTestCase(unittest.TestCase):
 
     def test_theLast3bitsOf11thByteIsCurrentSector(self):
         validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000000000")
-        self.assertEqual(validParser.sector, 0x00)
+        self.assertEqual(validParser.sector, BrushSector.NO_SECTOR)
         validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000010000")
-        self.assertEqual(validParser.sector, 0x01)
+        self.assertEqual(validParser.sector, BrushSector.SECTOR_1)
         validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000020000")
-        self.assertEqual(validParser.sector, 0x02)
+        self.assertEqual(validParser.sector, BrushSector.SECTOR_2)
         validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000FF0000")
-        self.assertEqual(validParser.sector, 0x07)
+        self.assertEqual(validParser.sector, BrushSector.LAST_SECTOR)
 
     def test_thecentral3bitsOf11thByteIsCurrentSmily(self):
         validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000000000")

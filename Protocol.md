@@ -42,9 +42,12 @@ byte 9 is the fwVersion
 byte 10 brush state (see #State)
 
 byte 11
-bit 8: high pressure 0 = normal 1 = high
-bit 7: motor speed, 0 = normal 1 = reduced
-bit 1: timer mode, 0 = profesional (each 30s) 1= only end
+
+- bit 8: high pressure 0 = normal 1 = high
+- bit 7: motor speed, 0 = normal 1 = reduced
+- bit 3: mode button pressed
+- bit 2: power button pressed
+- bit 1: timer mode, 0 = profesional (each 30s) 1= only end
 
 byte 12 brusing time min 
 
@@ -99,7 +102,9 @@ data: 2 bytes [state, unknown]
 
 ### Battery level:
 uuid: A0F0FF05-5047-4D53-8208-4F72616C2D42
-data: only the first byte it is used -> 0..100 ?
+
+byte 0: battery level
+byte 1: seconds left (if present)
 
 ### Brusing mode
 UUID: A0F0FF07-5047-4D53-8208-4F72616C2D42
