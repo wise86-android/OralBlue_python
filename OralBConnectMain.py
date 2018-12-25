@@ -7,7 +7,7 @@ from OralBlue.BrushMode import BrushMode
 from OralBlue.OralBToothbrush import OralBToothbrush
 
 if __name__ == '__main__':
-    device = OralBToothbrush("10:CE:A9:28:93:24")
+    device = OralBToothbrush("10:CE:A9:28:93:24",protocolVersion=3)
     #device.readBrushMode(lambda x: print("Mode: {}".format(str(x))))
     #device.readBrushState(lambda x: print("State: {}".format(str(x))))
     # device.setBatteryUpdateCallback(lambda x: print("Battery: {}%".format(x)))

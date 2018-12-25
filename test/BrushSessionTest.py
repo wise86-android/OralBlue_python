@@ -50,5 +50,39 @@ class BrushSessionTestCase(unittest.TestCase):
         session = BrushSession(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x00\x00\x00\x00\x00\x00")
         self.assertEqual(session.nPressure,0)
 
+    def test_byte11IsBatteryCharge(self):
+        session = BrushSession(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x00\x00\x00\x00")
+        self.assertEqual(session.finalBatteryState, 11)
+        session = BrushSession(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x32\x00\x00\x00\x00")
+        self.assertEqual(session.finalBatteryState,50)
+
+    def test_last4BytesAreTheLastCharge(self):
+        session = BrushSession(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x00\x00\x00\x00")
+        self.assertEqual(session.lastCharge,datetime(year=2000,month=1,day=1))
+        session = BrushSession(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x3B\x0A\x00\x00\x00")
+        self.assertEqual(session.lastCharge,datetime(year=2000, month=1, day=1,second=10))
+
+class BrushSessionV2Or3TestCase(unittest.TestCase):
+
+    def test_bytes12AsNSectionAndTargetTime(self):
+        session = BrushSession(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x00\x00\x00\x00",protocolVersion=3)
+        self.assertEqual(session.lastCharge,None)
+        self.assertEqual(session.numberOfSector,0)
+        self.assertEqual(session.sessionTargetTime, 0)
+        session = BrushSession(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x3B\x78\x80\x00\x00",protocolVersion=3)
+        self.assertEqual(session.lastCharge, None)
+        self.assertEqual(session.numberOfSector, 4)
+        self.assertEqual(session.sessionTargetTime, 120)
+
+    def test_bytes14AsSessionIdAndUserId(self):
+        session = BrushSession(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x00\x00",protocolVersion=3)
+        self.assertEqual(session.lastCharge,None)
+        self.assertEqual(session.sessionId,0)
+        self.assertEqual(session.userId, 0)
+        session = BrushSession(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x3B\x78\x80\x03\x20",protocolVersion=3)
+        self.assertEqual(session.lastCharge, None)
+        self.assertEqual(session.sessionId, 3)
+        self.assertEqual(session.userId, 1)
+
 if __name__ == '__main__':
     unittest.main()
