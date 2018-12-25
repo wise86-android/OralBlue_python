@@ -74,13 +74,13 @@ class AdvertiseParserTestCase(unittest.TestCase):
 
     def test_the1stBitIsTheTimerMode(self):
         validParser = OralBAdvertise.OralBAdvertise("dc000000000001000000000000")
-        self.assertTrue(validParser.hasProfesionalTimer)
+        self.assertFalse(validParser.hasProfesionalTimer)
         validParser = OralBAdvertise.OralBAdvertise("dc0000000000FF000000000000")
-        self.assertTrue(validParser.hasProfesionalTimer)
+        self.assertFalse(validParser.hasProfesionalTimer)
         validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000000000")
-        self.assertFalse(validParser.hasProfesionalTimer)
+        self.assertTrue(validParser.hasProfesionalTimer)
         validParser = OralBAdvertise.OralBAdvertise("dc0000000000FE000000000000")
-        self.assertFalse(validParser.hasProfesionalTimer)
+        self.assertTrue(validParser.hasProfesionalTimer)
 
     def test_the8thByteIsBrushingTime(self):
         validParser = OralBAdvertise.OralBAdvertise("dc000000000000000000000000")

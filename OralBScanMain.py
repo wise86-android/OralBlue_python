@@ -10,23 +10,13 @@ class OralBScanDelegate(DefaultDelegate):
         pass
 
     @staticmethod
-    def _printUpdateDevice(adv: OralBAdvertise):
-        printMe = "Status: {}\n" \
-               "Brush time: {} s\n" \
-               "Brush mode: {}\n" \
-               "Sector: {}\n" \
-               "Pressure detected: {}\n". \
-            format(str(adv.state), adv.brushingTimeS, str(adv.brushingMode), adv.sector,adv.hightPressureDetected)
-        print(printMe)
-
-    @staticmethod
     def _printNewDevice(device: ScanEntry, adv: OralBAdvertise):
         printMe = "New device detected:\n" \
               "Address: {}\n" \
               "Type: {}\n" \
               "FwVersion: {}\n".format(device.addr, str(adv.typeId), adv.fwVersion)
         print(printMe)
-        OralBScanDelegate._printUpdateDevice(adv)
+        print(str(adv))
 
     # when this python script discovers a BLE broadcast packet, print a message with the device's MAC address
     def handleDiscovery(self, dev: ScanEntry, isNewDev: bool, isNewData):
@@ -38,7 +28,7 @@ class OralBScanDelegate(DefaultDelegate):
         if isNewDev:
             OralBScanDelegate._printNewDevice(dev,advertise)
         elif isNewData:
-            OralBScanDelegate._printUpdateDevice(advertise)
+            print(str(advertise))
 
 
 if __name__ == '__main__':

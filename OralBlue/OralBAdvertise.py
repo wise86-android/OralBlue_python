@@ -41,7 +41,7 @@ class OralBAdvertise(object):
         self._state = BrushState(self._extractByte(advertiseData, 5))
         self._highPressureDetected = (self._extractByte(advertiseData, 6) & 0x80) != 0
         self._hasReducedMotorSpeed = (self._extractByte(advertiseData, 6) & 0x40) != 0
-        self._hasProfesionalTimer = (self._extractByte(advertiseData, 6) & 0x1) != 0
+        self._hasProfesionalTimer = (self._extractByte(advertiseData, 6) & 0x1) == 0
         self._brushTimeSec = self._extractByte(advertiseData,7)*60+self._extractByte(advertiseData,8)
         self._brushMode = BrushMode(self._extractByte(advertiseData,9))
         self._sector = OralBAdvertise.toBrushSecotr(self._extractByte(advertiseData,10) & 0x7)
@@ -107,3 +107,18 @@ class OralBAdvertise(object):
     @property
     def hasReducedMotorSpeed(self)->bool:
         return self._hasReducedMotorSpeed
+
+    def __str__(self) -> str:
+        return "Status: {}\n" \
+               "Brush time: {} s\n" \
+               "Brush mode: {}\n" \
+               "Sector: {}\n" \
+               "Pressure detected: {}\n"\
+               "Protocol Version: {}\n" \
+               "TypeId: {}\n" \
+               "Has reduced motor speed: {}\n" \
+               "Has professional timer: {}\n" \
+               "Smiley: {}\n"\
+                .format(str(self.state), self.brushingTimeS, str(self.brushingMode), str(self.sector),
+                        self.hightPressureDetected,self.protocolVersion,self.typeId,self.hasReducedMotorSpeed,
+                        self.hasProfesionalTimer,self.smiley)
