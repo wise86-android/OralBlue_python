@@ -17,7 +17,7 @@ class BrushSignal(NamedTuple):
 
     def toInt(self)->int:
         value = 0
-        if (self.vibrate):
+        if self.vibrate:
             value = value | 1
         if self.finalVibrate:
             value = value | 2

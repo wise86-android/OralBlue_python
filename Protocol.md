@@ -7,7 +7,7 @@ byte 0 must be 0 and byte 3 must be 0xC (12) or 0xE(14)
 byte 3 is the length of the vendor specific part + 1 -> 11 or 13 bytes
 byte 5 and 6 must be 0xDC00
 
-byte 7 is the protocol version (1,2,3)
+byte 7 is the protocol version (1,2,3,4)
 
 byte 8 is device type and can be:
 
@@ -49,9 +49,9 @@ byte 11
 - bit 2: power button pressed
 - bit 1: timer mode, 0 = profesional (each 30s) 1= only end
 
-byte 12 brusing time min 
+byte 12 brushing time min 
 
-byte 13 brusing time sec
+byte 13 brushing time sec
 
 byte 14 brush mode (see #Mode)
 
@@ -90,154 +90,132 @@ bit 3,4,5: smiley
 
 ## Charateristics
 
+### ToothbrushID
+UUID: a0f0ff01-5047-4d53-8208-4f72616c2d42
+
+data: uint32 little endian
+an id different for each toothbrush??
+
 ### ModelId
 UUID: a0f0ff02-5047-4d53-8208-4f72616c2d42
 
-data: 1 byte model id ad in advertise
+data: 3 bytes: [modeId, protocolVersion, fwVersion]
+
+Node: protocol version and fwVersion are available only if protocolVersion >=3
+
+### UserId
+UUID: a0f0ff03-5047-4d53-8208-4f72616c2d42
+
+data: 1 byte current user id, can be change with a simple write
 
 ### Status
 UUID: A0F0FF04-5047-4D53-8208-4F72616C2D42
 
-data: 2 bytes [state, unknown]
+data: 2 bytes [state, unknown] as in the advertise
 
 ### Battery level:
-uuid: A0F0FF05-5047-4D53-8208-4F72616C2D42
+UUID: A0F0FF05-5047-4D53-8208-4F72616C2D42
 
-byte 0: battery level
-byte 1: seconds left (if present)
+data: 4 bytes [ battery level (%), seconds left (2bytes le), unknown]
 
-### Brusing mode
+Node: seconds left available only with protocol version > 3 
+
+### Button State:
+UUID: a0f0ff06-5047-4d53-8208-4f72616c2d42
+
+data: 2 bytes: [powerButtonState, modeButtonState] , 1 = pressed
+
+### Brushing mode
 UUID: A0F0FF07-5047-4D53-8208-4F72616C2D42
 
-data: 1 byte -> 0..6
+data: 1 byte -> 0..6 as in the advertise
 
-### Brusing time:
+### Brushing time:
 UUID: A0F0FF08-5047-4D53-8208-4F72616C2D42
 
 data: 2 bytes [min, sec]
 
 
-###Sector
+### Sector
 UUID: a0f0ff09-5047-4d53-8208-4f72616c2d42
 
-data 1 byte -> 0..8
+data 1 byte -> 0..8 as in the advertise
 
 
-###Current time
+### Control Char
+UUID: a0f0ff21-5047-4d53-8208-4f72616c2d42
+
+write here before change some configuration
+
+### Current time
 UUID: a0f0ff22-5047-4d53-8208-4f72616c2d42
+
+Access: R/W
 
 data: 4 bytes little endian seconds after 1/1/2000
 
-Access: R/W
-
 Note: To change it you have to write [0x37,0x26] into the control characteristics before write the new value
 
+### Signals
+UUID: a0f0ff24-5047-4d53-8208-4f72616c2d42
 
-#Available modes
+Access: R/W
+data: 1 byte: tell the status of the user notification:
+- bit 1 = is vibrating (as a sector end)
+- bit 2 = is vibrating (as a session end)
+- bit 3 = light on (as high pressure)
+- bit 4 = light on (as session end)
+
+note: before write it, write [0x37,0x28] in the control characteristics
+
+node: writing is not working :(
+
+### Available modes
 UUID: a0f0ff25-5047-4d53-8208-4f72616c2d42
-
-Data: 8 byte, each byte is a possible motor mode
 Access: R/W
 
-it can be used to reordered the available modes
+Data: 8 byte, each byte is a possible motor mode, it can be used to reordered the available modes
 
 Note: To change it you have to write [0x37,0x29] into the control characteristics before write the new value
 
-### button state ?
-UUID A0F0FF06-5047-4D53-8208-4F72616C2D42
+### Sector timer
+UUID: a0f0ff26-5047-4d53-8208-4f72616c2d42
+Access: R/W
 
-### smily ?
-UUID A0F0FF0a-5047-4D53-8208-4F72616C2D42
+Data: 8 uint16 le, timeout for each sector, to update it all the 8 value must be present
 
-when 2 minutes ends
+Node: write [0x37,0x2A] into the control characteristics before change the values  
+ 
 
-data: 1 byte 0/1 
+### Session Info
+UUID: a0f0ff29-5047-4d53-8208-4f72616c2d42
+Access:R
 
+from this value the session data can be read.
 
+To select the session, write [0x02, index] into the control characteristics.
 
-Used Bluetooth LE Scanner app
+The number of stored session are:
+- 20 for protocol version 1
+- 30 for protocol version 2,3,4 
 
+#### Session Format
+- Start time: 4 bytes le, seconds after 1/1/2000
+- duration : 2 bytes le, duration in seconds
+- event count: 1 byte ??
+- mode: 1 byte, as in the advertise, mode used for the majority of time during the session
+- time under pressure: 2 byte le seconds with the hight pressure warning on
+- pressure warnings: 1 byte, # pressure warnings
+- final battery state: 1 byte % of battery when the session ends
 
- A0F0FF04-5047-4D53-8208-4F72616C2D42: Device State
- States over time
- on: 0x200
- starting to brush: 0x800
- brushing: 0x300
- on: 0x200
+the last 4 byte has a different meaning with different protocol versions:
+if protocol version == 1 
+- last full charge: 4 bytes seconds after 1/1/2000
+
+if protocol version == 2,3,4
+- 2 byte: as uint16 le, 3 bit = # sector, 13 bit total target time
+- 2 byte: as uint16 le, 3 bit = # user id, 13 bit session id
+
+if protocol version ==4
+time under pressure is in 1/10 seconds 
  
- 
- A0F0FF0B-5047-4D53-8208-4F72616C2D42: Pressure Sensor
- 0x00 by default
- 
- A0F0FF08-5047-4D53-8208-4F72616C2D42: Brushing Time
- Increases by 1 every second
- 
- A0F0FF09-5047-4D53-8208-4F72616C2D42: Quadrant
- Increases every second, "jumps when quadrant is jumped"
- 
- 
- A0F0FF06-5047-4D53-8208-4F72616C2D42: Button State
- 0x01000000 when power button pressed, 0x0 otherwise
- 
- A0F0FF0a-5047-4D53-8208-4F72616C2D42: Smiley
- 0x0 by default, turns to 0x1 when brushing time reached
- 0x01000000 when power button pressed, 0x0 otherwise
- 
- A0F0FF07-5047-4D53-8208-4F72616C2D42: Brushing mode
- 0x1: daily
- 0x3: +
- 0x4: feather
- 0x2: diamond
- 0x7 "water"
- 
- A0F0FF0d-5047-4D53-8208-4F72616C2D42: sensor data
- lots of hex values updating fast, partially repeated in the hex string
- 
- 
- gatttool:
- [A8:1B:6A:BD:03:8E][LE]> characteristics
- handle: 0x0002, char properties: 0x02, char value handle: 0x0003, uuid: 00002a00-0000-1000-8000-00805f9b34fb
- handle: 0x0004, char properties: 0x02, char value handle: 0x0005, uuid: 00002a01-0000-1000-8000-00805f9b34fb
- handle: 0x0006, char properties: 0x0a, char value handle: 0x0007, uuid: 00002a02-0000-1000-8000-00805f9b34fb
- handle: 0x0008, char properties: 0x0a, char value handle: 0x0009, uuid: 00002a03-0000-1000-8000-00805f9b34fb
- handle: 0x000a, char properties: 0x02, char value handle: 0x000b, uuid: 00002a04-0000-1000-8000-00805f9b34fb
- handle: 0x000d, char properties: 0x20, char value handle: 0x000e, uuid: 00002a05-0000-1000-8000-00805f9b34fb
- handle: 0x0011, char properties: 0x1a, char value handle: 0x0012, uuid: a0f0fff1-5047-4d53-8208-4f72616c2d42
- handle: 0x0015, char properties: 0x0a, char value handle: 0x0016, uuid: a0f0fff2-5047-4d53-8208-4f72616c2d42
- handle: 0x0018, char properties: 0x0a, char value handle: 0x0019, uuid: a0f0fff3-5047-4d53-8208-4f72616c2d42
- handle: 0x001b, char properties: 0x0a, char value handle: 0x001c, uuid: a0f0fff4-5047-4d53-8208-4f72616c2d42
- handle: 0x001f, char properties: 0x02, char value handle: 0x0020, uuid: a0f0ff01-5047-4d53-8208-4f72616c2d42
- handle: 0x0022, char properties: 0x02, char value handle: 0x0023, uuid: a0f0ff02-5047-4d53-8208-4f72616c2d42
- handle: 0x0025, char properties: 0x0a, char value handle: 0x0026, uuid: a0f0ff03-5047-4d53-8208-4f72616c2d42
- handle: 0x0028, char properties: 0x12, char value handle: 0x0029, uuid: a0f0ff04-5047-4d53-8208-4f72616c2d42
- handle: 0x002c, char properties: 0x12, char value handle: 0x002d, uuid: a0f0ff05-5047-4d53-8208-4f72616c2d42
- handle: 0x0030, char properties: 0x12, char value handle: 0x0031, uuid: a0f0ff06-5047-4d53-8208-4f72616c2d42
- handle: 0x0034, char properties: 0x12, char value handle: 0x0035, uuid: a0f0ff07-5047-4d53-8208-4f72616c2d42
- handle: 0x0038, char properties: 0x12, char value handle: 0x0039, uuid: a0f0ff08-5047-4d53-8208-4f72616c2d42
- handle: 0x003c, char properties: 0x12, char value handle: 0x003d, uuid: a0f0ff09-5047-4d53-8208-4f72616c2d42
- handle: 0x0040, char properties: 0x12, char value handle: 0x0041, uuid: a0f0ff0a-5047-4d53-8208-4f72616c2d42
- handle: 0x0044, char properties: 0x12, char value handle: 0x0045, uuid: a0f0ff0b-5047-4d53-8208-4f72616c2d42
- handle: 0x0048, char properties: 0x1a, char value handle: 0x0049, uuid: a0f0ff0c-5047-4d53-8208-4f72616c2d42
- handle: 0x004c, char properties: 0x12, char value handle: 0x004d, uuid: a0f0ff0d-5047-4d53-8208-4f72616c2d42
- handle: 0x0051, char properties: 0x1a, char value handle: 0x0052, uuid: a0f0ff21-5047-4d53-8208-4f72616c2d42
- handle: 0x0055, char properties: 0x0a, char value handle: 0x0056, uuid: a0f0ff22-5047-4d53-8208-4f72616c2d42
- handle: 0x0058, char properties: 0x0a, char value handle: 0x0059, uuid: a0f0ff23-5047-4d53-8208-4f72616c2d42
- handle: 0x005b, char properties: 0x0a, char value handle: 0x005c, uuid: a0f0ff24-5047-4d53-8208-4f72616c2d42
- handle: 0x005e, char properties: 0x0a, char value handle: 0x005f, uuid: a0f0ff25-5047-4d53-8208-4f72616c2d42
- handle: 0x0061, char properties: 0x0a, char value handle: 0x0062, uuid: a0f0ff26-5047-4d53-8208-4f72616c2d42
- handle: 0x0064, char properties: 0x0a, char value handle: 0x0065, uuid: a0f0ff27-5047-4d53-8208-4f72616c2d42
- handle: 0x0067, char properties: 0x0a, char value handle: 0x0068, uuid: a0f0ff28-5047-4d53-8208-4f72616c2d42
- handle: 0x006a, char properties: 0x02, char value handle: 0x006b, uuid: a0f0ff29-5047-4d53-8208-4f72616c2d42
- handle: 0x006d, char properties: 0x0a, char value handle: 0x006e, uuid: a0f0ff2a-5047-4d53-8208-4f72616c2d42
- handle: 0x0070, char properties: 0x0a, char value handle: 0x0071, uuid: a0f0ff2b-5047-4d53-8208-4f72616c2d42
- 
- gatttool  --device=A8:1B:6A:BD:03:8E --char-write-req --handle=0x003a
- --value=0100 --listen
- Characteristic value was written successfully
- Notification handle = 0x0039 value: 00 02 
- Notification handle = 0x0039 value: 00 03 
- Notification handle = 0x0039 value: 00 04 
- Notification handle = 0x0039 value: 00 05 
- Notification handle = 0x0039 value: 00 06 
- Notification handle = 0x0039 value: 00 07 
- Notification handle = 0x0039 value: 00 00 

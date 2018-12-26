@@ -18,7 +18,6 @@ class OralBButtonStatus(NamedTuple):
     powerButtonPressed: bool = False
     modeButtonPressed: bool = False
 
-
 #todo add sensor data
 #todo set signal not working?
 class OralBToothbrush(Peripheral, DefaultDelegate):
@@ -147,14 +146,14 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
                                    lambda data: callback(OralBToothbrush._parseBatteryStatysResponse(data)))
 
     def readBrushingTime(self) -> int:
-        data = self._statusChar.read()
+        data = self._brushingTimeChar.read()
         return OralBToothbrush._parseBrushingTimeResponse(data)
 
     def setBrushingTimeUpdateCallback(self, callback: Optional[BrushingTimeCallback]):
         if callback is None:
-            self._removeCallback(self._statusChar)
+            self._removeCallback(self._brushingTimeChar)
         else:
-            self._registerCallback(self._statusChar,
+            self._registerCallback(self._brushingTimeChar,
                                    lambda data: callback(
                                        OralBToothbrush._parseBrushingTimeResponse(data)))
 
