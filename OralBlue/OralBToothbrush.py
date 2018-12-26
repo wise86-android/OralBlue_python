@@ -1,10 +1,11 @@
 import struct
-from array import array
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from typing import Callable, Iterable, Optional, NamedTuple
 
 from bluepy.btle import Peripheral, UUID, Characteristic, DefaultDelegate
 
+from OralBlue.BrushBattery import BrushBattery
+from OralBlue.BrushInfo import BrushInfo
 from OralBlue.BrushMode import BrushMode
 from OralBlue.BrushSector import BrushSector
 from OralBlue.BrushSession import BrushSession
@@ -18,24 +19,26 @@ class OralBButtonStatus(NamedTuple):
     modeButtonPressed: bool = False
 
 
+#todo add sensor data
+#todo set signal not working?
 class OralBToothbrush(Peripheral, DefaultDelegate):
+    _TOOTHBRUSH_ID_TIME_CHAR = UUID("a0f0ff01-5047-4d53-8208-4f72616c2d42")
     _MODEL_ID_CHAR = UUID("a0f0ff02-5047-4d53-8208-4f72616c2d42")
+    _USER_ID_CHAR = UUID("a0f0ff03-5047-4d53-8208-4f72616c2d42")
     _STATUS_CHAR = UUID("a0f0ff04-5047-4d53-8208-4f72616c2d42")
     _BATTERY_CHAR = UUID("a0f0ff05-5047-4d53-8208-4f72616c2d42")
+    _BUTTON_CHAR = UUID("a0f0ff06-5047-4d53-8208-4f72616c2d42")
     _MODE_CHAR = UUID("a0f0ff07-5047-4d53-8208-4f72616c2d42")
     _BRUSING_TIME_CHAR = UUID("a0f0ff08-5047-4d53-8208-4f72616c2d42")
+    _CURRENT_SECTOR_CHAR = UUID("a0f0ff09-5047-4d53-8208-4f72616c2d42")
     _CONTROL_CHAR = UUID("a0f0ff21-5047-4d53-8208-4f72616c2d42")
     _CURRENT_DATE_CHAR = UUID("a0f0ff22-5047-4d53-8208-4f72616c2d42")
+    _SIGNAL_CHAR = UUID("a0f0ff24-5047-4d53-8208-4f72616c2d42")
     _AVAILABLE_MODES_CHAR = UUID("a0f0ff25-5047-4d53-8208-4f72616c2d42")
+    _SECTOR_TIME_CHAR = UUID("a0f0ff26-5047-4d53-8208-4f72616c2d42")
     _SESSION_INFO_CHAR = UUID("a0f0ff29-5047-4d53-8208-4f72616c2d42")
-    _SIGNAL_CHAR = UUID("a0f0ff29-5047-4d53-8208-4f72616c2d42")  # -6849694501799768749L
-    _BUTTON_CHAR = UUID("a0f0ff29-5047-4d53-8208-4f72616c2d42")  # -6849694630648787629L
-    _CURRENT_SECOTOR_CHAR = UUID("a0f0ff29-5047-4d53-8208-4f72616c2d42")  # -6849694617763885741L
-    _SECTOR_TIME_CHAR = UUID("a0f0ff29-5047-4d53-8208-4f72616c2d42")  # -6849694493209834157L
-    _USER_ID_CHAR = UUID("a0f0ff29-5047-4d53-8208-4f72616c2d42")  # -6849694493209834157L
-    _TOOTHBRUSH_ID_TIME_CHAR = UUID("a0f0ff29-5047-4d53-8208-4f72616c2d42")  # -6849694493209834157L
 
-    BatteryStatusCallback = Callable[[int], None]
+    BatteryStatusCallback = Callable[[BrushBattery], None]
     BrushingTimeCallback = Callable[[int], None]
     BrushStateCallback = Callable[[BrushState], None]
     BrushModeCallback = Callable[[BrushMode], None]
@@ -70,7 +73,7 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
         self._sessionInfoChar = OralBToothbrush._findChar(OralBToothbrush._SESSION_INFO_CHAR, allChars)
         self._signalChar = OralBToothbrush._findChar(OralBToothbrush._SIGNAL_CHAR, allChars)
         self._buttonChar = OralBToothbrush._findChar(OralBToothbrush._BUTTON_CHAR, allChars)
-        self._currentSectorChar = OralBToothbrush._findChar(OralBToothbrush._CURRENT_SECOTOR_CHAR, allChars)
+        self._currentSectorChar = OralBToothbrush._findChar(OralBToothbrush._CURRENT_SECTOR_CHAR, allChars)
         self._sectorTimeChar = OralBToothbrush._findChar(OralBToothbrush._SECTOR_TIME_CHAR, allChars)
         self._userIdChar = OralBToothbrush._findChar(OralBToothbrush._USER_ID_CHAR, allChars)
         self._toothbrushIdChar = OralBToothbrush._findChar(OralBToothbrush._TOOTHBRUSH_ID_TIME_CHAR, allChars)
@@ -99,8 +102,12 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
         self._disableNotification(characteristic)
 
     @staticmethod
-    def _parseBatteryStatysResponse(data) -> int:
-        return int(data[0])
+    def _parseBatteryStatysResponse(data) -> BrushBattery:
+        if len(data) >= 3:
+            remainingSec = struct.unpack("<H",data[1:3])[0]
+            return BrushBattery(level=data[0],remainingSec=timedelta(seconds=remainingSec))
+        else:
+            return BrushBattery(level=data[0])
 
     @staticmethod
     def _parseBrushingTimeResponse(data) -> int:
@@ -121,15 +128,16 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
             modeButtonPressed=bool(data[1])
         )
 
-    def readModelId(self):
+    def readModelId(self) ->BrushInfo:
         data = self._modelIdChar.read()
-        return data[0]
+        if len(data) == 3:
+            return BrushInfo(type=data[0],protocolVersion=data[1],fwversion=data[2])
+        else:
+            return BrushInfo(type=data[0])
 
-    def readBatteryStatus(self, onRead: BatteryStatusCallback):
-        if self._batteryChar is None:
-            return
+    def readBatteryStatus(self)->BrushBattery:
         data = self._batteryChar.read()
-        onRead(OralBToothbrush._parseBatteryStatysResponse(data))
+        return OralBToothbrush._parseBatteryStatysResponse(data)
 
     def setBatteryUpdateCallback(self, callback: Optional[BatteryStatusCallback]):
         if callback is None:
@@ -138,11 +146,9 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
             self._registerCallback(self._batteryChar,
                                    lambda data: callback(OralBToothbrush._parseBatteryStatysResponse(data)))
 
-    def readBrushingTime(self, onRead: BrushingTimeCallback):
-        if self._brushingTimeChar is None:
-            return
+    def readBrushingTime(self) -> int:
         data = self._statusChar.read()
-        onRead(OralBToothbrush._parseBrushingTimeResponse(data))
+        return OralBToothbrush._parseBrushingTimeResponse(data)
 
     def setBrushingTimeUpdateCallback(self, callback: Optional[BrushingTimeCallback]):
         if callback is None:
@@ -152,11 +158,9 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
                                    lambda data: callback(
                                        OralBToothbrush._parseBrushingTimeResponse(data)))
 
-    def readBrushState(self, onRead: BrushStateCallback):
-        if self._statusChar is None:
-            return
+    def readBrushState(self) -> BrushState:
         data = self._statusChar.read()
-        onRead(OralBToothbrush._parseBrushStateResponse(data))
+        return OralBToothbrush._parseBrushStateResponse(data)
 
     def setBrushStateUpdateCallback(self, callback: Optional[BrushStateCallback]):
         if callback is None:
@@ -166,7 +170,7 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
                                    lambda data: callback(
                                        OralBToothbrush._parseBrushStateResponse(data)))
 
-    def setBrushButtonPressedCallbac(self, callback: Optional[BrushButtonCallback]):
+    def setBrushButtonPressedCallback(self, callback: Optional[BrushButtonCallback]):
         if callback is None:
             self._removeCallback(self._buttonChar)
         else:
@@ -181,11 +185,9 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
             self._registerCallback(self._currentSectorChar,
                                    lambda data: callback(BrushSector(data[0])))
 
-    def readBrushMode(self, onRead: BrushModeCallback):
-        if self._modeChar is None:
-            return
+    def readBrushMode(self) -> BrushMode:
         data = self._modeChar.read()
-        onRead(OralBToothbrush._parseBrushModeResponse(data))
+        return OralBToothbrush._parseBrushModeResponse(data)
 
     def setBrushModeUpdateCallback(self, callback: Optional[BrushModeCallback]):
         if callback is None:
@@ -242,7 +244,7 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
 
     def writeSignalStatus(self, newStatus: BrushSignal):
         self._writeControl(0x37, 0x28)
-        rawData = newStatus.toInt()
+        rawData = struct.pack("I",newStatus.toInt())
         self._signalChar.write(rawData)
 
     def readSectorTimer(self) -> [int]:
@@ -251,9 +253,11 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
         return struct.unpack("<" + "H" * nSector, rawData)
 
     def setSectorTimer(self, time: [int]):
-        missingValue = len(time) - 8
+        missingValue = 8 - len(time)
+        print(missingValue)
         time += [0] * missingValue
-        rawTime = struct.pack("<" + "H" * 8, time)
+        print(time)
+        rawTime = struct.pack("<" + "H" * 8, *time)
         self._writeControl(0x37, 0x2A)
         self._sectorTimeChar.write(rawTime)
 
@@ -261,8 +265,9 @@ class OralBToothbrush(Peripheral, DefaultDelegate):
         return self._userIdChar.read()[0]
 
     def setUserId(self, newId: int):
-        self._userIdChar.write(newId)
+        rawTime = struct.pack("B", newId)
+        self._userIdChar.write(rawTime)
 
     def readToothbrushId(self) -> int:
         rawData = self._toothbrushIdChar.read()
-        return struct.unpack("<H", rawData)[0]
+        return struct.unpack("<I", rawData[0:4])[0]
